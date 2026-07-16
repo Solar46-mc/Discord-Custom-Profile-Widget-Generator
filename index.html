@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PATCHBAY — Discord Profile Widget V2 コードジェネレーター</title>
+<meta name="description" content="Discord Profile Widgets V2 用の Node.js / Google Apps Script テンプレートをブラウザ内だけで生成します。トークンはどこにも送信されません。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">PATCHBAY <small>/ widget-v2</small></a>
+    <nav class="nav-links">
+      <a href="index.html" class="navlink active">はじめに</a>
+      <a href="setup.html" class="navlink">Discord側の準備</a>
+      <a href="select.html" class="navlink">スタイルを選ぶ</a>
+      <a href="builder.html" class="navlink">作成する</a>
+    </nav>
+    <div class="site-note">token stays in-browser</div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="kicker">discord profile widgets v2 · unofficial toolkit</div>
+    <h1>コードだけ持ち帰る。<br><em>トークンは、渡さない。</em></h1>
+    <p class="lead">
+      Spotify・Steam・Last.fm連携から、画像・統計グリッド・コレクション・進捗バーまで。
+      Discord Profile Widgets V2 用の Node.js / Google Apps Script テンプレートを組み立てるための、
+      4つのページに分かれたツールです。入力した資格情報はどこにも送信されません。
+    </p>
+    <div class="cta-row">
+      <a class="primary-link" href="select.html"><button class="primary">スタイルを選んで作りはじめる →</button></a>
+      <a class="primary-link" href="setup.html"><button class="ghost">先にDiscord側の準備を見る</button></a>
+    </div>
+  </div>
+</section>
+
+<section class="step">
+  <div class="wrap">
+    <div class="step-head"><span class="step-num">概要</span><h2>PATCHBAYでできること</h2></div>
+    <p class="step-desc">Discordの実験的機能「Profile Widgets V2」用のウィジェットを、コードを書かずに組み立てて、実行用のコードだけを持ち帰れるツールです。</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="num">01</span>
+        <strong>ブラウザだけで完結</strong>
+        <span>Application ID、Bot Token、Spotify/Steam/Last.fmの資格情報はすべてこのページ内のJavaScriptで処理され、外部サーバーには一切送信されません。</span>
+      </div>
+      <div class="feature-card">
+        <span class="num">02</span>
+        <strong>7種のプリセット＋詳細ビルダー</strong>
+        <span>Spotify・Steam・Last.fm連携のプリセットや、画像・コレクション・進捗バーなどの構成をすぐに使えます。もちろん、まっさらな状態からすべて手動で組み立てることもできます。</span>
+      </div>
+      <div class="feature-card">
+        <span class="num">03</span>
+        <strong>Node.js / GASの2形式で出力</strong>
+        <span>自分のPCやサーバーで動かすNode.jsスクリプトと、Googleアカウントだけで定期実行できるGoogle Apps Scriptの、どちらの形式でもコードを生成できます。</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="step">
+  <div class="wrap">
+    <div class="step-head"><span class="step-num">仕組み</span><h2>なぜ安全に使えるか</h2></div>
+    <p class="step-desc">
+      DWidgetsのような第三者サービスは便利な反面、自分のBot Tokenをそのサービスのサーバーに預ける必要があります。
+      PATCHBAYは真逆のアプローチを取ります。
+    </p>
+    <div class="panel">
+      <h3>サーバーを持たない、という設計</h3>
+      <p class="panel-hint" style="margin-bottom:0;">
+        このサイトはGitHub Pagesなどの静的ホスティング上で動作する、ただのHTMLファイル群です。フォームに入力した値は、
+        「Discordへ送るためのJavaScriptコードの文字列」を組み立てる材料としてのみブラウザ内で使われ、どこにも送信・保存されません。
+        生成されたコードをコピーまたはダウンロードしたら、実際にDiscordのAPIを呼び出すのは、あなた自身のPCやサーバー、
+        またはあなたのGoogleアカウント上のApps Scriptです。つまりPATCHBAYを閉じてしまっても、あなたの資格情報がどこかに残ることはありません。
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="step" style="border-bottom:none;">
+  <div class="wrap">
+    <div class="cta-banner">
+      <div>
+        <strong>準備ができたら、次はスタイル選び</strong>
+        <span>プリセットからすぐ始めるか、詳細ビルダーでゼロから組み立てるかを選べます。</span>
+      </div>
+      <a class="primary-link" href="select.html"><button class="primary">スタイルを選ぶ →</button></a>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <div class="wrap">
+    PATCHBAY is an unofficial, community-made tool. Not affiliated with or endorsed by Discord Inc., Spotify, Valve, or Last.fm.
+    すべての処理はブラウザ内で完結し、入力値はどこにも送信・保存されません。 ·
+    Discord Profile Widgets V2 is an experimental feature and may change or be removed at any time.
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discord側の下準備 — PATCHBAY</title>
+<meta name="description" content="Discord Profile Widgets V2 を使うために、Developer Portal側で必要な準備手順。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">PATCHBAY <small>/ widget-v2</small></a>
+    <nav class="nav-links">
+      <a href="index.html" class="navlink">はじめに</a>
+      <a href="setup.html" class="navlink active">Discord側の準備</a>
+      <a href="select.html" class="navlink">スタイルを選ぶ</a>
+      <a href="builder.html" class="navlink">作成する</a>
+    </nav>
+    <div class="site-note">token stays in-browser</div>
+  </div>
+</header>
+
+<section class="hero" style="padding-bottom:32px;">
+  <div class="wrap">
+    <div class="kicker">step 01 · discord developer portal</div>
+    <h1>Discord側の<em>下準備</em></h1>
+    <p class="lead">
+      Widgets V2 はまだ一般公開UIがない実験的機能です。コードを生成する前に、Developer Portal側でアプリケーションと
+      ウィジェットのレイアウトを作成しておく必要があります。ここで作った「Data Field」の名前は、作成ページが
+      表示するキー名（例: <code>display_name</code>）と一致させてください。
+    </p>
+  </div>
+</section>
+
+<section class="step" style="border-bottom:none;">
+  <div class="wrap">
+
+    <details class="guide" open>
+      <summary>1. アプリケーションを作成し、Social SDK を有効化する</summary>
+      <div class="guide-body">
+        <p><a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developer Portal</a> で新規アプリケーションを作成し、
+        サイドバーの <code>Games → Social SDK</code> から申請フォームを送信してください。ゲーム本体は不要で、送信するとすぐにアクセスできます。無料で利用できます。</p>
+      </div>
+    </details>
+
+    <details class="guide">
+      <summary>2. ウィジェット編集画面を解放する（実験フラグ）</summary>
+      <div class="guide-body">
+        <p>Widget エディタは既定では非表示です。Developer Portal を開いた状態でブラウザの開発者コンソールに次のコードを貼り付けて実行すると、
+        サイドバーに <code>Widget</code> 項目が現れます（ページはリロードしないこと。リロードすると解放状態は消えます）。</p>
+        <pre class="snippet">let _m=webpackChunkdiscord_developers.push([[Symbol()],{},r=>r.c]);
+webpackChunkdiscord_developers.pop();
+let f=(...p)=>{for(let m of Object.values(_m))try{
+  if(!m.exports||m.exports===window)continue;
+  if(p.every(x=>m.exports?.[x]))return m.exports;
+  for(let e in m.exports)
+    if(p.every(x=>m.exports?.[e]?.[x]) && m.exports[e][Symbol.toStringTag]!=='IntlMessagesProxy')
+      return m.exports[e];
+}catch{}};
+f("getAll").getAll().find(e=>e.getName()==="ApexExperimentStore")
+  .createOverride("2026-03-widget-config-editor", 1);</pre>
+      </div>
+    </details>
+
+    <details class="guide">
+      <summary>3. ウィジェットのレイアウトを、作成ページと同じ構成で作る</summary>
+      <div class="guide-body">
+        <p>Widget Top（Hero / Contained）、Widget Bottom（Stats Grid / Progress / Collection）、Mini Profile
+        （名前＋説明 / 最初の統計 / カスタムテキスト）を、作成ページで選んだものと同じ組み合わせで作成してください。
+        各項目の <code>Value Type = User Data</code> を選び、<code>Data Field</code>に作成ページが表示するキー名
+        （例: <code>display_name</code>, <code>stat1_value</code>）をそのまま入力します。設定後は Save Changes → Publish を忘れずに。</p>
+      </div>
+    </details>
+
+    <details class="guide">
+      <summary>4. App ID / Bot Token / あなたのDiscordユーザーIDを控える</summary>
+      <div class="guide-body">
+        <p>App ID は General Information タブ、Bot Token は Bot タブの Reset Token から取得できます。
+        自分のプロフィール用に使う場合は、Discord の設定 → Authorized Apps で自分のアプリを認可しておいてください
+        （フレンドリスト管理・ステータス更新・プロフィールアクセスの権限が必要です）。
+        これらの値は作成ページのフォームに入力しますが、<strong>ページの外へは送信されません</strong>。</p>
+      </div>
+    </details>
+
+    <details class="guide">
+      <summary>5. プロフィールへウィジェットを表示する</summary>
+      <div class="guide-body">
+        <p>作成ページで生成したコードを実行するとデータの送信（PATCH）はできるようになりますが、ウィジェット自体をプロフィールに表示するには、
+        Discord公式クライアントの「Add Widget」メニューから自分のアプリケーションを追加する操作が別途必要です
+        （実験 <code>2026-03-application-widget-v2-renderer</code> を Variant 1 にしておくことも忘れずに）。
+        この操作手順はDiscordの仕様変更が頻繁なため、最新のやり方は Discord Previews コミュニティ等で確認することを推奨します。</p>
+      </div>
+    </details>
+
+    <div class="cta-banner" style="margin-top:8px;">
+      <div>
+        <strong>Discord側の準備ができたら</strong>
+        <span>次はウィジェットのスタイルを選びましょう。</span>
+      </div>
+      <a class="primary-link" href="select.html"><button class="primary">スタイルを選ぶ →</button></a>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <div class="wrap">
+    PATCHBAY is an unofficial, community-made tool. Not affiliated with or endorsed by Discord Inc.
+    Discord Profile Widgets V2 is an experimental feature and may change or be removed at any time.
+  </div>
+</div>
+
+</body>
+</html>

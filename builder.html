@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作成する — PATCHBAY</title>
+<meta name="description" content="Discord Profile Widgets V2 用のウィジェットを組み立てて、Node.js / Google Apps Script のコードを生成します。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">PATCHBAY <small>/ widget-v2</small></a>
+    <nav class="nav-links">
+      <a href="index.html" class="navlink">はじめに</a>
+      <a href="setup.html" class="navlink">Discord側の準備</a>
+      <a href="select.html" class="navlink">スタイルを選ぶ</a>
+      <a href="builder.html" class="navlink active">作成する</a>
+    </nav>
+    <div class="site-note">token stays in-browser</div>
+  </div>
+</header>
+
+<section class="hero" style="padding-bottom:28px;">
+  <div class="wrap">
+    <div class="kicker">step 03 · build &amp; generate</div>
+    <h1>ウィジェットを<em>組み立てる</em></h1>
+    <p class="lead">右側（モバイルでは上部）に常に見た目のプレビューが表示されます。入力するたびに、下のコードも更新されます。</p>
+  </div>
+</section>
+
+<section class="step">
+  <div class="wrap">
+    <div class="builder-topbar">
+      <div class="cur">構成中: <b id="curPresetLabel">カスタム</b></div>
+      <a class="primary-link" href="select.html"><button class="ghost">← スタイル選択に戻る</button></a>
+    </div>
+
+    <div class="builder-layout">
+      <div class="builder-form">
+
+        <div class="panel">
+          <h3>データソース</h3>
+          <p class="panel-hint">DWidgetsの「プロフィールからの自動入力」に相当します。選んだサービスのAPIから、生成コード自身がデータを取得してDiscordへ反映します。</p>
+          <div class="field-grid">
+            <div class="field">
+              <label>ソース</label>
+              <select id="dataSource">
+                <option value="manual">手動入力（固定値）</option>
+                <option value="spotify">Spotify（再生中の曲）</option>
+                <option value="steam">Steam（ステータス／プレイ中ゲーム）</option>
+                <option value="lastfm">Last.fm（直近の再生履歴）</option>
+              </select>
+            </div>
+            <div class="field" id="dsPollField">
+              <label>更新間隔（秒）</label>
+              <input id="pollInterval" value="30">
+            </div>
+          </div>
+          <div id="dsCredFields" style="margin-top:14px;"></div>
+        </div>
+
+        <div class="panel">
+          <h3>身元 <span class="tag">identity</span></h3>
+          <div class="field-grid">
+            <div class="field"><label>Application ID</label><input id="appId" placeholder="1234567890123456789"></div>
+            <div class="field"><label>Discord User ID <span class="keyname">あなた自身のID</span></label><input id="userId" placeholder="9876543210987654321"></div>
+            <div class="field" style="grid-column:1/-1;"><label>Bot Token</label><input id="botToken" type="password" placeholder="Bot Token"></div>
+            <div class="field" style="grid-column:1/-1;"><label>内部名 <span class="keyname">一覧用のメモ、Discordには送信されません</span></label><input id="internalName" placeholder="Custom Widget"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>外観 <span class="tag">widget_top</span></h3>
+          <div class="field-grid">
+            <div class="field"><label>表示名 <span class="keyname">display_name</span></label><input id="apDisplayName" maxlength="100" placeholder="Solar"></div>
+            <div class="field"><label>メイン画像／GIFのURL <span class="keyname">image</span></label><input id="apImage" placeholder="https://.../image.png"></div>
+            <div class="field" style="grid-column:1/-1;"><label>説明（サブタイトル） <span class="keyname">description</span></label><textarea id="apDescription" maxlength="100" placeholder="@handle など"></textarea></div>
+            <div class="field"><label>字幕アイコン（任意） <span class="keyname">subtitle_icon</span></label><input id="apSubIcon" placeholder="https://.../icon.png"></div>
+          </div>
+
+          <h3 style="margin-top:18px;">ウィジェットトップ</h3>
+          <div class="layout-select" id="topLayoutSelect">
+            <div class="layout-opt" data-val="hero"><strong>ヒーロー</strong><span>画面いっぱいに広がる大きな画像</span></div>
+            <div class="layout-opt" data-val="contained"><strong>封じ込められた</strong><span>額装された小さめの画像</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>ウィジェット下部 <span class="tag" id="bottomTag">widget_bottom</span></h3>
+          <div class="layout-select three" id="bottomLayoutSelect">
+            <div class="layout-opt" data-val="stats"><strong>統計グリッド</strong><span>最大6つの値＋ラベル</span></div>
+            <div class="layout-opt" data-val="progress"><strong>進捗</strong><span>目標＋進捗バー</span></div>
+            <div class="layout-opt" data-val="collection"><strong>コレクション</strong><span>4つの画像＋タイトル</span></div>
+            <div class="layout-opt" data-val="none"><strong>なし</strong><span>トップのみのシンプル構成</span></div>
+          </div>
+          <div id="bottomFields" style="margin-top:14px;"></div>
+        </div>
+
+        <div class="panel">
+          <h3>ミニプロフィール <span class="tag">mini_profile</span></h3>
+          <p class="panel-hint">ウィジェットにマウスを合わせたときにDiscordが表示する内容です。</p>
+          <div class="layout-select" id="miniProfileSelect">
+            <div class="layout-opt" data-val="name_desc"><strong>名前＋説明</strong><span>表示名とサブタイトル</span></div>
+            <div class="layout-opt" data-val="first_stat"><strong>最初の統計</strong><span>統計1つ目の値（例:「1.2k」）</span></div>
+            <div class="layout-opt" data-val="custom_text"><strong>カスタムテキスト</strong><span>好きなことを何でも書く</span></div>
+          </div>
+          <div class="field-grid" style="margin-top:14px;">
+            <div class="field" id="miniCustomField" style="grid-column:1/-1; display:none;">
+              <label>カスタムテキスト <span class="keyname">mini_profile_text</span></label>
+              <input id="miniCustomText" maxlength="100" placeholder="好きなことを何でも書いてください">
+            </div>
+            <div class="field"><label>ミニプロフィール画像（任意） <span class="keyname">mini_profile_image</span></label><input id="miniImage" placeholder="未設定ならメイン画像を再利用"></div>
+            <div class="field"><label>アクティビティアクセサリー（任意） <span class="keyname">activity_accessory_text</span></label><input id="activityText" maxlength="100" placeholder="2:53:04・ストリーク7d"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="builder-preview-col">
+        <div class="schematic">
+          <div class="fig"><span>FIG. 01 — LIVE PREVIEW</span><span id="previewSize">320×?</span></div>
+          <div class="dwidget" id="dwidgetPreview"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="step">
+  <div class="wrap">
+    <div class="step-head"><span class="step-num">04</span><h2>コードを生成</h2></div>
+    <p class="step-desc">実行環境を選んでください。どちらもこのブラウザの中で組み立てられたテキストで、外部への送信は発生しません。</p>
+
+    <div class="warn-box">
+      これは Discord の非公式・実験段階の内部APIを利用します。仕様は予告なく変わる可能性があり、Botトークンの取り扱いには十分注意してください。
+      生成されたコードは自分のマシン、または自分が管理する環境でのみ実行することを想定しています。
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-runtime="node">Node.js</div>
+      <div class="tab" data-runtime="gas">Google Apps Script</div>
+    </div>
+    <div class="code-out">
+      <div class="code-bar">
+        <span class="fname" id="codeFilename">widget-updater.js</span>
+        <div class="code-actions">
+          <button class="ghost" id="copyBtn">Copy</button>
+          <button class="ghost" id="downloadBtn">Download</button>
+        </div>
+      </div>
+      <pre><code id="codeOutput"></code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="step" style="border-bottom:none;">
+  <div class="wrap">
+    <div class="step-head"><span class="step-num">05</span><h2>実行と定期更新</h2></div>
+
+    <details class="guide" open>
+      <summary>Node.js の場合</summary>
+      <div class="guide-body">
+        <p>Node.js 18 以上であれば追加ライブラリなしで動きます。ファイルを保存して次のコマンドで実行してください。</p>
+        <pre class="snippet">node widget-updater.js</pre>
+        <p>常駐させたい場合は <code>pm2 start widget-updater.js --name discord-widget</code> のようなプロセスマネージャの利用がおすすめです。
+        Spotify / Steam / Last.fm 連携は内部で一定間隔ごとにポーリングし続けます。手動入力（画像・統計・コレクション・進捗）は一回だけ送信するので、
+        値を変えるたびに再実行するか、cronやタスクスケジューラで定期実行してください。</p>
+      </div>
+    </details>
+
+    <details class="guide">
+      <summary>Google Apps Script の場合</summary>
+      <div class="guide-body">
+        <p><a href="https://script.google.com" target="_blank" rel="noopener">script.google.com</a> で新規プロジェクトを作成し、生成されたコードを貼り付けます。
+        一度 <code>pushToDiscord</code> を手動実行して動作確認し、問題なければ左メニューの時計アイコン（トリガー）から
+        「時間主導型」トリガーを追加し、数分おきに <code>pushToDiscord</code> を呼ぶよう設定してください。</p>
+      </div>
+    </details>
+
+    <details class="guide">
+      <summary>プロフィールへウィジェットを表示する</summary>
+      <div class="guide-body">
+        <p>まだDiscord側の準備が済んでいない場合は <a href="setup.html">Discord側の準備ページ</a> を先に確認してください。
+        ウィジェット自体をプロフィールに表示するには、Discord公式クライアントの「Add Widget」メニューから自分のアプリケーションを
+        追加する操作が別途必要です（実験 <code>2026-03-application-widget-v2-renderer</code> を Variant 1 にしておくことも忘れずに）。</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<div class="footer">
+  <div class="wrap">
+    PATCHBAY is an unofficial, community-made tool. Not affiliated with or endorsed by Discord Inc., Spotify, Valve, or Last.fm.
+    すべての処理はブラウザ内で完結し、入力値はどこにも送信・保存されません。 ·
+    Discord Profile Widgets V2 is an experimental feature and may change or be removed at any time.
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+  function esc(str) {
+    return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+  function v(id, fallback) {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    return (el.value || '').trim() || fallback;
+  }
+
+  const emptyStat = () => ({ label: '', value: '', icon: '' });
+  const emptyCollectionItem = () => ({ image: '', title: '' });
+
+  const state = {
+    presetKey: 'custom',
+    runtime: 'node',
+    dataSource: 'manual',
+    topLayout: 'hero',
+    bottomLayout: 'stats',
+    miniProfile: 'name_desc',
+    stats: [emptyStat(), emptyStat(), emptyStat(), emptyStat(), emptyStat(), emptyStat()],
+    collection: [emptyCollectionItem(), emptyCollectionItem(), emptyCollectionItem(), emptyCollectionItem()],
+    progress: { label: '目標まで', current: 40, goal: 100 },
+  };
+
+  const PRESETS = {
+    custom: {
+      label: 'カスタム（詳細ビルダー）', dataSource: 'manual', topLayout: 'hero', bottomLayout: 'stats', miniProfile: 'name_desc',
+      appearance: { name: '', desc: '', image: '' },
+      stats: [emptyStat(), emptyStat(), emptyStat(), emptyStat(), emptyStat(), emptyStat()],
+    },
+    spotify: {
+      label: 'Spotify Now Playing', dataSource: 'spotify', topLayout: 'hero', bottomLayout: 'stats', miniProfile: 'name_desc',
+      appearance: { name: 'Now Playing', desc: 'Artist Name', image: '' },
+      stats: [ {label:'アルバム', value:'Album Name', icon:''}, {label:'状態', value:'Playing', icon:''}, emptyStat(), emptyStat(), emptyStat(), emptyStat() ],
+    },
+    steam: {
+      label: 'Steam ステータス', dataSource: 'steam', topLayout: 'hero', bottomLayout: 'stats', miniProfile: 'name_desc',
+      appearance: { name: 'Playing a game', desc: 'Online', image: '' },
+      stats: [ {label:'ステータス', value:'In-Game', icon:''}, {label:'ゲーム', value:'Game Title', icon:''}, emptyStat(), emptyStat(), emptyStat(), emptyStat() ],
+    },
+    lastfm: {
+      label: 'Last.fm Scrobble', dataSource: 'lastfm', topLayout: 'hero', bottomLayout: 'stats', miniProfile: 'name_desc',
+      appearance: { name: 'Song Title', desc: 'Artist', image: '' },
+      stats: [ {label:'アルバム', value:'Album', icon:''}, {label:'状態', value:'Scrobbling', icon:''}, emptyStat(), emptyStat(), emptyStat(), emptyStat() ],
+    },
+    image: {
+      label: 'カスタム画像', dataSource: 'manual', topLayout: 'contained', bottomLayout: 'none', miniProfile: 'name_desc',
+      appearance: { name: 'お気に入りの一枚', desc: '', image: '' },
+      stats: [emptyStat(), emptyStat(), emptyStat(), emptyStat(), emptyStat(), emptyStat()],
+    },
+    collection: {
+      label: 'コレクション', dataSource: 'manual', topLayout: 'contained', bottomLayout: 'collection', miniProfile: 'name_desc',
+      appearance: { name: 'My Collection', desc: '', image: '' },
+      collection: [ {image:'',title:'Item 1'}, {image:'',title:'Item 2'}, {image:'',title:'Item 3'}, {image:'',title:'Item 4'} ],
+    },
+    progress: {
+      label: 'カウントダウン / 進捗', dataSource: 'manual', topLayout: 'hero', bottomLayout: 'progress', miniProfile: 'first_stat',
+      appearance: { name: 'Level Progress', desc: '', image: '' },
+      progress: { label: '次のレベルまで', current: 40, goal: 100 },
+    },
+    stats: {
+      label: 'カスタム統計グリッド', dataSource: 'manual', topLayout: 'hero', bottomLayout: 'stats', miniProfile: 'name_desc',
+      appearance: { name: 'My Stats', desc: '', image: '' },
+      stats: [emptyStat(), emptyStat(), emptyStat(), emptyStat(), emptyStat(), emptyStat()],
+    },
+  };
+
+  function applyPreset(key) {
+    const p = PRESETS[key] || PRESETS.custom;
+    state.presetKey = PRESETS[key] ? key : 'custom';
+    state.dataSource = p.dataSource;
+    state.topLayout = p.topLayout;
+    state.bottomLayout = p.bottomLayout;
+    state.miniProfile = p.miniProfile;
+    state.stats = (p.stats || [emptyStat(),emptyStat(),emptyStat(),emptyStat(),emptyStat(),emptyStat()]).map(s => ({...s}));
+    state.collection = (p.collection || [emptyCollectionItem(),emptyCollectionItem(),emptyCollectionItem(),emptyCollectionItem()]).map(c => ({...c}));
+    state.progress = { ...(p.progress || {label:'目標まで', current:40, goal:100}) };
+
+    document.getElementById('curPresetLabel').textContent = p.label;
+    document.getElementById('apDisplayName').value = p.appearance.name;
+    document.getElementById('apDescription').value = p.appearance.desc;
+    document.getElementById('apImage').value = p.appearance.image;
+    document.getElementById('dataSource').value = p.dataSource;
+    syncLayoutButtons();
+    renderDsCredFields();
+    renderBottomFields();
+    refresh();
+  }
+
+  /* ---------- data source credential fields ---------- */
+  function renderDsCredFields() {
+    const box = document.getElementById('dsCredFields');
+    const ds = document.getElementById('dataSource').value;
+    document.getElementById('dsPollField').style.display = ds === 'manual' ? 'none' : 'flex';
+    if (ds === 'spotify') {
+      box.innerHTML = `<p class="info-box">Client ID/Secretは <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify Developer Dashboard</a>、Refresh Tokenは自分でAuthorization Code Flowを一度通して取得してください。</p>
+      <div class="field-grid">
+        <div class="field"><label>Spotify Client ID</label><input id="spClientId" placeholder="xxxxxxxxxxxxxxxx"></div>
+        <div class="field"><label>Spotify Client Secret</label><input id="spClientSecret" type="password" placeholder="xxxxxxxxxxxxxxxx"></div>
+        <div class="field" style="grid-column:1/-1;"><label>Spotify Refresh Token</label><input id="spRefreshToken" type="password" placeholder="AQD...."></div>
+      </div>`;
+    } else if (ds === 'steam') {
+      box.innerHTML = `<p class="info-box">Steam Web APIキーは <a href="https://steamcommunity.com/dev/apikey" target="_blank" rel="noopener">steamcommunity.com/dev/apikey</a> から無料で取得できます。</p>
+      <div class="field-grid">
+        <div class="field"><label>Steam Web API Key</label><input id="steamApiKey" type="password" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
+        <div class="field"><label>SteamID64</label><input id="steamId" placeholder="76561198000000000"></div>
+      </div>`;
+    } else if (ds === 'lastfm') {
+      box.innerHTML = `<p class="info-box">APIキーは <a href="https://www.last.fm/api/account/create" target="_blank" rel="noopener">Last.fm API アカウント作成ページ</a>から無料で取得できます。</p>
+      <div class="field-grid">
+        <div class="field"><label>Last.fm API Key</label><input id="lastfmApiKey" type="password" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
+        <div class="field"><label>Last.fm ユーザー名</label><input id="lastfmUser" placeholder="your_username"></div>
+      </div>`;
+    } else {
+      box.innerHTML = `<p class="info-box">手動入力の場合、外観・統計等に入力した値がそのまま固定でDiscordに送信されます。</p>`;
+    }
+    $$('input', box).forEach((el) => el.addEventListener('input', refresh));
+  }
+  document.getElementById('dataSource').addEventListener('change', () => {
+    state.dataSource = document.getElementById('dataSource').value;
+    renderDsCredFields();
+    refresh();
+  });
+  document.getElementById('pollInterval').addEventListener('input', refresh);
+
+  /* ---------- appearance fields ---------- */
+  ['appId','userId','botToken','internalName','apDisplayName','apImage','apDescription','apSubIcon','miniImage','miniCustomText','activityText']
+    .forEach((id) => document.getElementById(id).addEventListener('input', refresh));
+
+  /* ---------- layout selectors ---------- */
+  function wireLayoutGroup(containerId, onPick) {
+    $$('.layout-opt', document.getElementById(containerId)).forEach((opt) => {
+      opt.addEventListener('click', () => {
+        $$('.layout-opt', document.getElementById(containerId)).forEach((o) => o.classList.remove('active'));
+        opt.classList.add('active');
+        onPick(opt.dataset.val);
+      });
+    });
+  }
+  wireLayoutGroup('topLayoutSelect', (val) => { state.topLayout = val; refresh(); });
+  wireLayoutGroup('bottomLayoutSelect', (val) => { state.bottomLayout = val; renderBottomFields(); refresh(); });
+  wireLayoutGroup('miniProfileSelect', (val) => {
+    state.miniProfile = val;
+    document.getElementById('miniCustomField').style.display = val === 'custom_text' ? 'flex' : 'none';
+    refresh();
+  });
+
+  function syncLayoutButtons() {
+    $$('#topLayoutSelect .layout-opt').forEach((o) => o.classList.toggle('active', o.dataset.val === state.topLayout));
+    $$('#bottomLayoutSelect .layout-opt').forEach((o) => o.classList.toggle('active', o.dataset.val === state.bottomLayout));
+    $$('#miniProfileSelect .layout-opt').forEach((o) => o.classList.toggle('active', o.dataset.val === state.miniProfile));
+    document.getElementById('miniCustomField').style.display = state.miniProfile === 'custom_text' ? 'flex' : 'none';
+  }
+
+  /* ---------- bottom layout dynamic fields (stats / progress / collection) ---------- */
+  function renderBottomFields() {
+    const box = document.getElementById('bottomFields');
+    document.getElementById('bottomTag').textContent =
+      state.bottomLayout === 'stats' ? 'widget_bottom_stats' :
+      state.bottomLayout === 'progress' ? 'widget_bottom_progress' :
+      state.bottomLayout === 'collection' ? 'widget_bottom_collection' : 'widget_bottom';
+
+    if (state.bottomLayout === 'stats') {
+      const dynamicSource = state.dataSource !== 'manual';
+      box.innerHTML = state.stats.map((s, i) => `
+        <div class="row-index">STAT ${i+1} <span style="color:var(--teal)">stat${i+1}_label / stat${i+1}_value / stat${i+1}_icon</span></div>
+        <div class="stat-row" data-i="${i}">
+          <input class="stat-label" placeholder="ラベル" value="${esc(s.label)}">
+          <input class="stat-value" placeholder="${dynamicSource ? '（データソースから自動取得）' : '値'}" value="${esc(s.value)}" ${dynamicSource ? 'disabled' : ''}>
+          <input class="stat-icon" placeholder="アイコンURL（任意）" value="${esc(s.icon)}">
+        </div>`).join('');
+      $$('.stat-row', box).forEach((row) => {
+        const i = Number(row.dataset.i);
+        $('.stat-label', row).addEventListener('input', (e) => { state.stats[i].label = e.target.value; refresh(); });
+        $('.stat-value', row).addEventListener('input', (e) => { state.stats[i].value = e.target.value; refresh(); });
+        $('.stat-icon', row).addEventListener('input', (e) => { state.stats[i].icon = e.target.value; refresh(); });
+      });
+    } else if (state.bottomLayout === 'progress') {
+      box.innerHTML = `
+        <div class="field-grid">
+          <div class="field" style="grid-column:1/-1;"><label>ラベル <span class="keyname">progress_label</span></label><input id="progLabel" value="${esc(state.progress.label)}"></div>
+          <div class="field"><label>現在値 <span class="keyname">progress_current</span></label><input id="progCurrent" value="${esc(state.progress.current)}"></div>
+          <div class="field"><label>目標値 <span class="keyname">progress_goal</span></label><input id="progGoal" value="${esc(state.progress.goal)}"></div>
+        </div>`;
+      document.getElementById('progLabel').addEventListener('input', (e) => { state.progress.label = e.target.value; refresh(); });
+      document.getElementById('progCurrent').addEventListener('input', (e) => { state.progress.current = Number(e.target.value) || 0; refresh(); });
+      document.getElementById('progGoal').addEventListener('input', (e) => { state.progress.goal = Number(e.target.value) || 1; refresh(); });
+    } else if (state.bottomLayout === 'collection') {
+      box.innerHTML = state.collection.map((c, i) => `
+        <div class="row-index">ITEM ${i+1} <span style="color:var(--teal)">collection${i+1}_image / collection${i+1}_title</span></div>
+        <div class="collection-row" data-i="${i}" style="grid-template-columns:1fr 1fr;">
+          <input class="coll-image" placeholder="画像URL" value="${esc(c.image)}">
+          <input class="coll-title" placeholder="タイトル" value="${esc(c.title)}">
+        </div>`).join('');
+      $$('.collection-row', box).forEach((row) => {
+        const i = Number(row.dataset.i);
+        $('.coll-image', row).addEventListener('input', (e) => { state.collection[i].image = e.target.value; refresh(); });
+        $('.coll-title', row).addEventListener('input', (e) => { state.collection[i].title = e.target.value; refresh(); });
+      });
+    } else {
+      box.innerHTML = `<p class="panel-hint" style="margin:0;">ボトムセクションは使用しません。トップのみのシンプルなウィジェットになります。</p>`;
+    }
+  }
+
+  /* ---------- live preview ---------- */
+  function firstNonEmptyStat() { return state.stats.find((s) => s.value || s.label); }
+
+  function renderPreview() {
+    const name = v('apDisplayName', 'Widget Name');
+    const desc = v('apDescription', '');
+    const image = v('apImage', '');
+    const subIcon = v('apSubIcon', '');
+    document.getElementById('previewSize').textContent = state.topLayout === 'hero' ? '320×hero' : '320×contained';
+
+    let topHtml = '';
+    if (state.topLayout === 'hero') {
+      topHtml = `<div class="dw-top-hero" style="background-image:${image ? `url('${image.replace(/'/g,'')}')` : 'none'}">
+        <div class="dw-txt">
+          <div class="dw-title">${subIcon ? `<span class="dw-icon-inline" style="background-image:url('${subIcon.replace(/'/g,'')}')"></span>` : ''}${esc(name)}</div>
+          <div class="dw-sub">${esc(desc)}</div>
+        </div>
+      </div>`;
+    } else {
+      topHtml = `<div class="dw-top-contained">
+        <div class="art" style="background-image:${image ? `url('${image.replace(/'/g,'')}')` : 'none'}"></div>
+        <div>
+          <div class="dw-title" style="color:var(--text);">${subIcon ? `<span class="dw-icon-inline" style="background-image:url('${subIcon.replace(/'/g,'')}')"></span>` : ''}${esc(name)}</div>
+          <div class="dw-sub" style="color:var(--text-muted);">${esc(desc)}</div>
+        </div>
+      </div>`;
+    }
+
+    let bottomHtml = '';
+    if (state.bottomLayout === 'stats') {
+      const cells = state.stats.filter((s) => s.label || s.value).slice(0, 6);
+      if (cells.length) {
+        bottomHtml = `<div class="dw-bottom"><div class="dw-stats-grid">${cells.map((s) => `
+          <div class="dw-stat"><div class="lbl">${esc(s.label || '—')}</div><div class="val">${esc(s.value || '—')}</div></div>`).join('')}</div></div>`;
+      }
+    } else if (state.bottomLayout === 'progress') {
+      const pct = Math.max(0, Math.min(100, (state.progress.current / (state.progress.goal || 1)) * 100));
+      bottomHtml = `<div class="dw-bottom"><div class="dw-progress">
+        <div class="lbl"><span>${esc(state.progress.label)}</span><span>${esc(state.progress.current)}/${esc(state.progress.goal)}</span></div>
+        <div class="bar"><div style="width:${pct}%"></div></div>
+      </div></div>`;
+    } else if (state.bottomLayout === 'collection') {
+      const items = state.collection.filter((c) => c.image || c.title);
+      if (items.length) {
+        bottomHtml = `<div class="dw-bottom"><div class="dw-collection">${items.map((c) => `
+          <div class="dw-coll-item" style="background-image:${c.image ? `url('${c.image.replace(/'/g,'')}')` : 'none'}"><span>${esc(c.title)}</span></div>`).join('')}</div></div>`;
+      }
+    }
+
+    let miniHtml = '';
+    if (state.miniProfile === 'name_desc') {
+      miniHtml = `<div class="dw-mini"><b>mini profile</b>${esc(name)} — ${esc(desc || '（説明なし）')}</div>`;
+    } else if (state.miniProfile === 'first_stat') {
+      const fs = firstNonEmptyStat();
+      const val = state.bottomLayout === 'progress' ? `${state.progress.current}/${state.progress.goal}`
+        : state.bottomLayout === 'collection' ? (state.collection[0]?.title || '—')
+        : (fs ? (fs.value || fs.label) : '—');
+      miniHtml = `<div class="dw-mini"><b>mini profile</b>${esc(val)}</div>`;
+    } else {
+      miniHtml = `<div class="dw-mini"><b>mini profile</b>${esc(v('miniCustomText', '（未入力）'))}</div>`;
+    }
+
+    document.getElementById('dwidgetPreview').innerHTML = `<div class="dwidget">${topHtml}${bottomHtml}${miniHtml}</div>`;
+  }
+
+  /* ---------- code generation helpers ---------- */
+  function commonCreds() {
+    return { appId: v('appId','YOUR_APPLICATION_ID'), userId: v('userId','YOUR_DISCORD_USER_ID'), botToken: v('botToken','YOUR_BOT_TOKEN') };
+  }
+
+  function staticDynamicEntries(indent, opts) {
+    opts = opts || {};
+    const lines = [];
+    const name = v('apDisplayName', 'Widget Name');
+    const desc = v('apDescription', '');
+    const image = v('apImage', '');
+    const subIcon = v('apSubIcon', '');
+
+    if (!opts.skipTop) {
+      lines.push(`${indent}{ type: 1, name: "display_name", value: ${JSON.stringify(name)} },`);
+      lines.push(`${indent}{ type: 1, name: "description", value: ${JSON.stringify(desc)} },`);
+      lines.push(`${indent}{ type: 3, name: "image", value: { url: ${JSON.stringify(image)} } },`);
+      if (subIcon) lines.push(`${indent}{ type: 3, name: "subtitle_icon", value: { url: ${JSON.stringify(subIcon)} } },`);
+    }
+
+    if (state.bottomLayout === 'stats') {
+      state.stats.forEach((s, i) => {
+        if (!s.label && !s.value && !s.icon) return;
+        const n = i + 1;
+        lines.push(`${indent}{ type: 1, name: "stat${n}_label", value: ${JSON.stringify(s.label || '')} },`);
+        lines.push(`${indent}{ type: 1, name: "stat${n}_value", value: ${JSON.stringify(s.value || '')} },`);
+        if (s.icon) lines.push(`${indent}{ type: 3, name: "stat${n}_icon", value: { url: ${JSON.stringify(s.icon)} } },`);
+      });
+    } else if (state.bottomLayout === 'progress') {
+      lines.push(`${indent}{ type: 1, name: "progress_label", value: ${JSON.stringify(state.progress.label)} },`);
+      lines.push(`${indent}{ type: 2, name: "progress_current", value: ${Number(state.progress.current) || 0} },`);
+      lines.push(`${indent}{ type: 2, name: "progress_goal", value: ${Number(state.progress.goal) || 1} },`);
+    } else if (state.bottomLayout === 'collection') {
+      state.collection.forEach((c, i) => {
+        if (!c.image && !c.title) return;
+        const n = i + 1;
+        lines.push(`${indent}{ type: 3, name: "collection${n}_image", value: { url: ${JSON.stringify(c.image || '')} } },`);
+        lines.push(`${indent}{ type: 1, name: "collection${n}_title", value: ${JSON.stringify(c.title || '')} },`);
+      });
+    }
+
+    if (state.miniProfile === 'custom_text') {
+      lines.push(`${indent}{ type: 1, name: "mini_profile_text", value: ${JSON.stringify(v('miniCustomText',''))} },`);
+    }
+    const miniImg = v('miniImage', '');
+    if (miniImg) lines.push(`${indent}{ type: 3, name: "mini_profile_image", value: { url: ${JSON.stringify(miniImg)} } },`);
+    const actText = v('activityText', '');
+    if (actText) lines.push(`${indent}{ type: 1, name: "activity_accessory_text", value: ${JSON.stringify(actText)} },`);
+
+    return lines.join('\n');
+  }
+
+  function patchCallNode(bodyVarName) {
+    return `  const res = await fetch(
+    \`https://discord.com/api/v9/applications/\${CONFIG.discordAppId}/users/\${CONFIG.discordUserId}/identities/0/profile\`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": \`Bot \${CONFIG.discordBotToken}\`,
+        "User-Agent": "DiscordBot (https://github.com/discord/discord-api-docs, 1.0.0)",
+      },
+      body: JSON.stringify(${bodyVarName}),
+    }
+  );
+  if (!res.ok) {
+    console.error("[widget] update failed:", res.status, await res.text());
+  } else {
+    console.log(\`[widget] \${new Date().toLocaleTimeString()} — updated\`);
+  }`;
+  }
+
+  function patchCallGas() {
+    return `  const res = UrlFetchApp.fetch(
+    "https://discord.com/api/v9/applications/" + CONFIG.discordAppId + "/users/" + CONFIG.discordUserId + "/identities/0/profile",
+    {
+      method: "patch",
+      contentType: "application/json",
+      headers: {
+        Authorization: "Bot " + CONFIG.discordBotToken,
+        "User-Agent": "DiscordBot (https://github.com/discord/discord-api-docs, 1.0.0)",
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    }
+  );
+  Logger.log(res.getResponseCode() + " " + res.getContentText());`;
+  }
+
+  function genNode() {
+    const c = commonCreds();
+    const pollMs = (Number(v('pollInterval','30')) || 30) * 1000;
+
+    if (state.dataSource === 'spotify') {
+      const spClientId = v('spClientId','YOUR_SPOTIFY_CLIENT_ID');
+      const spClientSecret = v('spClientSecret','YOUR_SPOTIFY_CLIENT_SECRET');
+      const spRefreshToken = v('spRefreshToken','YOUR_SPOTIFY_REFRESH_TOKEN');
+      const extras = staticDynamicEntries('        ', { skipTop: true });
+      return `// PATCHBAY — Discord Widget V2 (data source: Spotify)
+// Node.js 18+ 推奨（グローバル fetch 使用）。自分の環境で実行してください。
+
+const CONFIG = {
+  discordAppId: ${JSON.stringify(c.appId)},
+  discordUserId: ${JSON.stringify(c.userId)},
+  discordBotToken: ${JSON.stringify(c.botToken)},
+  spotifyClientId: ${JSON.stringify(spClientId)},
+  spotifyClientSecret: ${JSON.stringify(spClientSecret)},
+  spotifyRefreshToken: ${JSON.stringify(spRefreshToken)},
+  pollIntervalMs: ${pollMs},
+};
+
+async function getSpotifyAccessToken() {
+  const res = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Authorization": "Basic " + Buffer.from(\`\${CONFIG.spotifyClientId}:\${CONFIG.spotifyClientSecret}\`).toString("base64"),
+    },
+    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: CONFIG.spotifyRefreshToken }),
+  });
+  const data = await res.json();
+  if (!data.access_token) throw new Error("Spotify token refresh failed: " + JSON.stringify(data));
+  return data.access_token;
+}
+
+async function getCurrentTrack(accessToken) {
+  const res = await fetch("https://api.spotify.com/v1/me/player/currently-playing", { headers: { Authorization: \`Bearer \${accessToken}\` } });
+  if (res.status === 204 || res.status === 404) return null;
+  return res.json();
+}
+
+async function tick() {
+  try {
+    const accessToken = await getSpotifyAccessToken();
+    const track = await getCurrentTrack(accessToken);
+    const isPlaying = !!(track && track.is_playing && track.item);
+    const item = isPlaying ? track.item : null;
+
+    const body = {
+      username: CONFIG.discordUserId,
+      data: {
+        dynamic: [
+          { type: 1, name: "display_name", value: isPlaying ? item.name : "Not playing" },
+          { type: 1, name: "description", value: isPlaying ? item.artists.map(a => a.name).join(", ") : "-" },
+          { type: 3, name: "image", value: { url: isPlaying ? (item.album?.images?.[0]?.url || "") : "" } },
+          { type: 1, name: "stat1_label", value: "アルバム" },
+          { type: 1, name: "stat1_value", value: isPlaying ? item.album?.name || "-" : "-" },
+          { type: 1, name: "stat2_label", value: "状態" },
+          { type: 1, name: "stat2_value", value: isPlaying ? "Playing" : "Paused" },
+${extras}
+        ],
+      },
+    };
+
+${patchCallNode('body')}
+  } catch (err) {
+    console.error("[widget] loop error:", err);
+  }
+}
+
+tick();
+setInterval(tick, CONFIG.pollIntervalMs);
+`;
+    }
+
+    if (state.dataSource === 'steam') {
+      const steamApiKey = v('steamApiKey','YOUR_STEAM_WEB_API_KEY');
+      const steamId = v('steamId','YOUR_STEAMID64');
+      const extras = staticDynamicEntries('        ', { skipTop: true });
+      return `// PATCHBAY — Discord Widget V2 (data source: Steam)
+// Steam Web API (公開・無料) を使用します。
+
+const CONFIG = {
+  discordAppId: ${JSON.stringify(c.appId)},
+  discordUserId: ${JSON.stringify(c.userId)},
+  discordBotToken: ${JSON.stringify(c.botToken)},
+  steamApiKey: ${JSON.stringify(steamApiKey)},
+  steamId: ${JSON.stringify(steamId)},
+  pollIntervalMs: ${pollMs},
+};
+
+async function getSteamStatus() {
+  const url = \`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=\${CONFIG.steamApiKey}&steamids=\${CONFIG.steamId}\`;
+  const res = await fetch(url);
+  const data = await res.json();
+  const player = data?.response?.players?.[0];
+  if (!player) throw new Error("Steam player not found");
+  return player;
+}
+
+const STATES = { 0: "Offline", 1: "Online", 2: "Busy", 3: "Away", 4: "Snooze", 5: "Looking to trade", 6: "Looking to play" };
+
+async function tick() {
+  try {
+    const player = await getSteamStatus();
+    const inGame = !!player.gameextrainfo;
+
+    const body = {
+      username: CONFIG.discordUserId,
+      data: {
+        dynamic: [
+          { type: 1, name: "display_name", value: inGame ? player.gameextrainfo : player.personaname },
+          { type: 1, name: "description", value: STATES[player.personastate] || "Unknown" },
+          { type: 3, name: "image", value: { url: player.avatarfull || "" } },
+          { type: 1, name: "stat1_label", value: "ステータス" },
+          { type: 1, name: "stat1_value", value: inGame ? "In-Game" : (STATES[player.personastate] || "Unknown") },
+          { type: 1, name: "stat2_label", value: "ゲーム" },
+          { type: 1, name: "stat2_value", value: inGame ? player.gameextrainfo : "-" },
+${extras}
+        ],
+      },
+    };
+
+${patchCallNode('body')}
+  } catch (err) {
+    console.error("[widget] loop error:", err);
+  }
+}
+
+tick();
+setInterval(tick, CONFIG.pollIntervalMs);
+`;
+    }
+
+    if (state.dataSource === 'lastfm') {
+      const lfKey = v('lastfmApiKey','YOUR_LASTFM_API_KEY');
+      const lfUser = v('lastfmUser','YOUR_LASTFM_USERNAME');
+      const extras = staticDynamicEntries('        ', { skipTop: true });
+      return `// PATCHBAY — Discord Widget V2 (data source: Last.fm)
+
+const CONFIG = {
+  discordAppId: ${JSON.stringify(c.appId)},
+  discordUserId: ${JSON.stringify(c.userId)},
+  discordBotToken: ${JSON.stringify(c.botToken)},
+  lastfmApiKey: ${JSON.stringify(lfKey)},
+  lastfmUser: ${JSON.stringify(lfUser)},
+  pollIntervalMs: ${pollMs},
+};
+
+async function getRecentTrack() {
+  const url = \`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=\${CONFIG.lastfmUser}&api_key=\${CONFIG.lastfmApiKey}&format=json&limit=1\`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data?.recenttracks?.track?.[0] || null;
+}
+
+async function tick() {
+  try {
+    const track = await getRecentTrack();
+    const isPlaying = !!(track && track["@attr"] && track["@attr"].nowplaying === "true");
+
+    const body = {
+      username: CONFIG.discordUserId,
+      data: {
+        dynamic: [
+          { type: 1, name: "display_name", value: track ? track.name : "Not playing" },
+          { type: 1, name: "description", value: track ? track.artist["#text"] : "-" },
+          { type: 3, name: "image", value: { url: track?.image?.slice(-1)?.[0]?.["#text"] || "" } },
+          { type: 1, name: "stat1_label", value: "アルバム" },
+          { type: 1, name: "stat1_value", value: track?.album?.["#text"] || "-" },
+          { type: 1, name: "stat2_label", value: "状態" },
+          { type: 1, name: "stat2_value", value: isPlaying ? "Scrobbling" : "Idle" },
+${extras}
+        ],
+      },
+    };
+
+${patchCallNode('body')}
+  } catch (err) {
+    console.error("[widget] loop error:", err);
+  }
+}
+
+tick();
+setInterval(tick, CONFIG.pollIntervalMs);
+`;
+    }
+
+    const extras = staticDynamicEntries('        ');
+    return `// PATCHBAY — Discord Widget V2 (手動入力・固定値)
+// 一度きりの送信スクリプトです。値を更新するたびに再実行してください。
+
+const CONFIG = {
+  discordAppId: ${JSON.stringify(c.appId)},
+  discordUserId: ${JSON.stringify(c.userId)},
+  discordBotToken: ${JSON.stringify(c.botToken)},
+};
+
+async function pushToDiscord() {
+  const body = {
+    username: CONFIG.discordUserId,
+    data: {
+      dynamic: [
+${extras}
+      ],
+    },
+  };
+
+${patchCallNode('body')}
+}
+
+pushToDiscord();
+`;
+  }
+
+  function genGas() {
+    const c = commonCreds();
+
+    if (state.dataSource === 'spotify') {
+      const spClientId = v('spClientId','YOUR_SPOTIFY_CLIENT_ID');
+      const spClientSecret = v('spClientSecret','YOUR_SPOTIFY_CLIENT_SECRET');
+      const spRefreshToken = v('spRefreshToken','YOUR_SPOTIFY_REFRESH_TOKEN');
+      return `// PATCHBAY — Discord Widget V2 (data source: Spotify) — Google Apps Script
+// 1. pushToDiscord を手動実行して動作確認
+// 2. トリガー（時計アイコン）→ 時間主導型 → 数分おきに pushToDiscord
+
+const CONFIG = {
+  discordAppId: ${JSON.stringify(c.appId)},
+  discordUserId: ${JSON.stringify(c.userId)},
+  discordBotToken: ${JSON.stringify(c.botToken)},
+  spotifyClientId: ${JSON.stringify(spClientId)},
+  spotifyClientSecret: ${JSON.stringify(spClientSecret)},
+  spotifyRefreshToken: ${JSON.stringify(spRefreshToken)},
+};
+
+function getSpotifyAccessToken_() {
+  const res = UrlFetchApp.fetch("https://accounts.spotify.com/api/token", {
+    method: "post",
+    headers: { Authorization: "Basic " + Utilities.base64Encode(CONFIG.spotifyClientId + ":" + CONFIG.spotifyClientSecret) },
+    payload: { grant_type: "refresh_token", refresh_token: CONFIG.spotifyRefreshToken },
+    muteHttpExceptions: true,
+  });
+  const data = JSON.parse(res.getContentText());
+  if (!data.access_token) throw new Error("Spotify token refresh failed: " + res.getContentText());
+  return data.access_token;
+}
+
+function pushToDiscord() {
+  const accessToken = getSpotifyAccessToken_();
+  const tRes = UrlFetchApp.fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+    headers: { Authorization: "Bearer " + accessToken }, muteHttpExceptions: true,
+  });
+  const isPlaying = tRes.getResponseCode() === 200;
+  const track = isPlaying ? JSON.parse(tRes.getContentText()) : null;
+  const item = track ? track.item : null;
+
+  const payload = {
+    username: CONFIG.discordUserId,
+    data: {
+      dynamic: [
+        { type: 1, name: "display_name", value: item ? item.name : "Not playing" },
+        { type: 1, name: "description", value: item ? item.artists.map(a => a.name).join(", ") : "-" },
+        { type: 3, name: "image", value: { url: item && item.album.images[0] ? item.album.images[0].url : "" } },
+        { type: 1, name: "stat1_label", value: "アルバム" },
+        { type: 1, name: "stat1_value", value: item ? item.album.name : "-" },
+        { type: 1, name: "stat2_label", value: "状態" },
+        { type: 1, name: "stat2_value", value: isPlaying ? "Playing" : "Paused" },
+      ],
+    },
+  };
+
+${patchCallGas()}
+}
+`;
+    }
+
+    if (state.dataSource === 'steam') {
+      const steamApiKey = v('steamApiKey','YOUR_STEAM_WEB_API_KEY');
+      const steamId = v('steamId','YOUR_STEAMID64');
+      return `// PATCHBAY — Discord Widget V2 (data source: Steam) — Google Apps Script
+
+const CONFIG = {
+  discordAppId: ${JSON.stringify(c.appId)},
+  discordUserId: ${JSON.stringify(c.userId)},
+  discordBotToken: ${JSON.stringify(c.botToken)},
+  steamApiKey: ${JSON.stringify(steamApiKey)},
+  steamId: ${JSON.stringify(steamId)},
+};
+
+const STATES = { 0: "Offline", 1: "Online", 2: "Busy", 3: "Away", 4: "Snooze", 5: "Looking to trade", 6: "Looking to play" };
+
+function pushToDiscord() {
+  const url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=" + CONFIG.steamApiKey + "&steamids=" + CONFIG.steamId;
+  const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  const player = JSON.parse(res.getContentText()).response.players[0];
+  const inGame = !!player.gameextrainfo;
+
+  const payload = {
+    username: CONFIG.discordUserId,
+    data: {
+      dynamic: [
+        { type: 1, name: "display_name", value: inGame ? player.gameextrainfo : player.personaname },
+        { type: 1, name: "description", value: STATES[player.personastate] || "Unknown" },
+        { type: 3, name: "image", value: { url: player.avatarfull || "" } },
+        { type: 1, name: "stat1_label", value: "ステータス" },
+        { type: 1, name: "stat1_value", value: inGame ? "In-Game" : (STATES[player.personastate] || "Unknown") },
+        { type: 1, name: "stat2_label", value: "ゲーム" },
+        { type: 1, name: "stat2_value", value: inGame ? player.gameextrainfo : "-" },
+      ],
+    },
+  };
+
+${patchCallGas()}
+}
+`;
+    }
+
+    if (state.dataSource === 'lastfm') {
+      const lfKey = v('lastfmApiKey','YOUR_LASTFM_API_KEY');
+      const lfUser = v('lastfmUser','YOUR_LASTFM_USERNAME');
+      return `// PATCHBAY — Discord Widget V2 (data source: Last.fm) — Google Apps Script
+
+const CONFIG = {
+  discordAppId: ${JSON.stringify(c.appId)},
+  discordUserId: ${JSON.stringify(c.userId)},
+  discordBotToken: ${JSON.stringify(c.botToken)},
+  lastfmApiKey: ${JSON.stringify(lfKey)},
+  lastfmUser: ${JSON.stringify(lfUser)},
+};
+
+function pushToDiscord() {
+  const url = "https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=" + CONFIG.lastfmUser + "&api_key=" + CONFIG.lastfmApiKey + "&format=json&limit=1";
+  const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  const data = JSON.parse(res.getContentText());
+  const track = data.recenttracks && data.recenttracks.track && data.recenttracks.track[0];
+  const isPlaying = !!(track && track["@attr"] && track["@attr"].nowplaying === "true");
+
+  const payload = {
+    username: CONFIG.discordUserId,
+    data: {
+      dynamic: [
+        { type: 1, name: "display_name", value: track ? track.name : "Not playing" },
+        { type: 1, name: "description", value: track ? track.artist["#text"] : "-" },
+        { type: 3, name: "image", value: { url: (track && track.image && track.image.length) ? track.image[track.image.length-1]["#text"] : "" } },
+        { type: 1, name: "stat1_label", value: "アルバム" },
+        { type: 1, name: "stat1_value", value: track && track.album ? track.album["#text"] : "-" },
+        { type: 1, name: "stat2_label", value: "状態" },
+        { type: 1, name: "stat2_value", value: isPlaying ? "Scrobbling" : "Idle" },
+      ],
+    },
+  };
+
+${patchCallGas()}
+}
+`;
+    }
+
+    const extras = staticDynamicEntries('        ');
+    return `// PATCHBAY — Discord Widget V2 (手動入力・固定値) — Google Apps Script
+// 1. pushToDiscord を手動実行
+// 2. 値を変えたいときはCONFIGやdynamic配列を書き換えて再実行（トリガー不要）
+
+const CONFIG = {
+  discordAppId: ${JSON.stringify(c.appId)},
+  discordUserId: ${JSON.stringify(c.userId)},
+  discordBotToken: ${JSON.stringify(c.botToken)},
+};
+
+function pushToDiscord() {
+  const payload = {
+    username: CONFIG.discordUserId,
+    data: {
+      dynamic: [
+${extras}
+      ],
+    },
+  };
+
+${patchCallGas()}
+}
+`;
+  }
+
+  function updateCode() {
+    const code = state.runtime === 'node' ? genNode() : genGas();
+    document.getElementById('codeOutput').textContent = code;
+    const ext = state.runtime === 'node' ? '.js' : '.gs.js';
+    document.getElementById('codeFilename').textContent = state.dataSource + '-widget' + ext;
+  }
+
+  function refresh() {
+    renderPreview();
+    updateCode();
+  }
+
+  $$('.tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      $$('.tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      state.runtime = tab.dataset.runtime;
+      updateCode();
+    });
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', async () => {
+    const text = document.getElementById('codeOutput').textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      const btn = document.getElementById('copyBtn');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(() => (btn.textContent = orig), 1400);
+    } catch (e) { alert('コピーに失敗しました。手動で選択してコピーしてください。'); }
+  });
+
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    const text = document.getElementById('codeOutput').textContent;
+    const filename = document.getElementById('codeFilename').textContent;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  /* ---------- init from URL ?preset=xxx ---------- */
+  const params = new URLSearchParams(location.search);
+  const presetParam = params.get('preset') || 'custom';
+  applyPreset(presetParam);
+})();
+</script>
+</body>
+</html>
