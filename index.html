@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Widget Bench — Discord Profile Widgets V2 設計ツール</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark">◱</span>
+      <span class="brand-name">Widget Bench</span>
+    </div>
+    <p class="brand-tag">Discord Profile Widgets V2 の構成を組み立てて、貼り付けるだけの状態にする非公式ツール</p>
+  </div>
+</header>
+
+<div class="disclaimer">
+  <strong>注意：</strong> Widgets V2 はDiscordの実験的・未文書化の機能です。仕様変更で動かなくなる可能性、規約上グレーな挙動（DevToolsコンソールでの内部モジュール操作を含む）を伴います。自己責任で利用してください。
+</div>
+
+<main class="layout">
+
+  <!-- STEP NAV -->
+  <nav class="steps" id="stepNav">
+    <button class="step-btn active" data-step="1"><span>1</span>ウィジェット上部</button>
+    <button class="step-btn" data-step="2"><span>2</span>ミニプロフィール</button>
+    <button class="step-btn" data-step="3"><span>3</span>ウィジェット下部</button>
+    <button class="step-btn" data-step="4"><span>4</span>データの取得元</button>
+    <button class="step-btn" data-step="5"><span>5</span>書き出し</button>
+  </nav>
+
+  <div class="workbench">
+
+    <!-- STEP 1 -->
+    <section class="panel" data-panel="1">
+      <h2>ウィジェット上部のレイアウト</h2>
+      <p class="hint">Discordがウィジェットの最上部をどう描画するかを選びます。</p>
+      <div class="option-grid" id="topLayoutOptions">
+        <label class="option-card">
+          <input type="radio" name="topLayout" value="hero" checked>
+          <div class="option-visual hero-visual"><div class="bar"></div><div class="block"></div></div>
+          <div class="option-title">ヒーロー</div>
+          <div class="option-desc">画像を画面いっぱいに大きく見せるレイアウト</div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="topLayout" value="framed">
+          <div class="option-visual framed-visual"><div class="bar"></div><div class="block small"></div></div>
+          <div class="option-title">コンパクト</div>
+          <div class="option-desc">小さめの画像を横に添えた、控えめなレイアウト</div>
+        </label>
+      </div>
+
+      <div class="field-group" id="topFields">
+        <label>タイトル
+          <input type="text" id="top-title" maxlength="100" placeholder="あなたの名前 / プロジェクト名">
+        </label>
+        <label>サブタイトル
+          <input type="text" id="top-subtitle" maxlength="100" placeholder="ひとことメッセージ">
+        </label>
+        <label>画像 URL
+          <input type="text" id="top-image" placeholder="https://.../image.png または .gif">
+        </label>
+        <p class="note">PNG / JPG / GIFに対応。ヒーロー表示では最初の約28文字より後は「…」で省略されます。</p>
+      </div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section class="panel" data-panel="2" hidden>
+      <h2>ミニプロフィールのレイアウト</h2>
+      <p class="hint">ウィジェットにカーソルを合わせたときにアプリアイコン横へ表示される内容です。</p>
+      <div class="option-grid" id="miniLayoutOptions">
+        <label class="option-card">
+          <input type="radio" name="miniLayout" value="name_description" checked>
+          <div class="option-visual mini-visual"><div class="line"></div><div class="line short"></div></div>
+          <div class="option-title">名前＋説明</div>
+          <div class="option-desc">名前とひとことの説明を表示</div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="miniLayout" value="first_stat">
+          <div class="option-visual mini-visual"><div class="line"></div><div class="line accent"></div></div>
+          <div class="option-title">代表的な統計値</div>
+          <div class="option-desc">「1.2k」のような数値を1つ強調表示</div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="miniLayout" value="custom_text">
+          <div class="option-visual mini-visual"><div class="line"></div><div class="line"></div></div>
+          <div class="option-title">カスタムテキスト</div>
+          <div class="option-desc">自由な2行のテキスト</div>
+        </label>
+      </div>
+
+      <div class="field-group" id="miniFields"></div>
+
+      <label class="field-inline">ミニプロフィール専用の画像（任意・空欄ならメイン画像を再利用）
+        <input type="text" id="mini-image" placeholder="https://.../image.png">
+      </label>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="panel" data-panel="3" hidden>
+      <h2>ウィジェット下部のレイアウト</h2>
+      <p class="hint">タイトルの下に表示する追加ブロックです。不要なら「なし」を選べます。</p>
+      <div class="option-grid" id="bottomLayoutOptions">
+        <label class="option-card">
+          <input type="radio" name="bottomLayout" value="none" checked>
+          <div class="option-visual"></div>
+          <div class="option-title">なし</div>
+          <div class="option-desc">ウィジェット上部とミニプロフィールのみ</div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="bottomLayout" value="stats_grid">
+          <div class="option-visual grid-visual"></div>
+          <div class="option-title">統計グリッド</div>
+          <div class="option-desc">最大6個の「値＋ラベル」タイル</div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="bottomLayout" value="progress">
+          <div class="option-visual progress-visual"><div class="track"><div class="fill"></div></div></div>
+          <div class="option-title">進捗バー</div>
+          <div class="option-desc">目標に対する進み具合を表示</div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="bottomLayout" value="collection">
+          <div class="option-visual collection-visual"><span></span><span></span><span></span><span></span></div>
+          <div class="option-title">コレクション</div>
+          <div class="option-desc">画像4枚を並べたタイル</div>
+        </label>
+      </div>
+
+      <div class="field-group" id="bottomFields"></div>
+    </section>
+
+    <!-- STEP 4 -->
+    <section class="panel" data-panel="4" hidden>
+      <h2>データの取得元</h2>
+      <p class="hint">値を固定にするか、botに定期更新させるかを選びます。「User Data」を選んだ項目はbotがAPI経由で更新できます。</p>
+      <div class="option-grid" id="sourceOptions">
+        <label class="option-card">
+          <input type="radio" name="dataSource" value="static" checked>
+          <div class="option-visual"></div>
+          <div class="option-title">固定値（Custom String）</div>
+          <div class="option-desc">一度設定したら変わらない、シンプルなウィジェット</div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="dataSource" value="bot_custom">
+          <div class="option-visual"></div>
+          <div class="option-title">自作botで更新（User Data）</div>
+          <div class="option-desc">自分のプログラムから任意のタイミングで値をPATCH</div>
+        </label>
+      </div>
+      <p class="note" id="sourceNote"></p>
+    </section>
+
+    <!-- STEP 5 -->
+    <section class="panel" data-panel="5" hidden>
+      <h2>書き出し</h2>
+      <p class="hint">以下をそれぞれコピーして使ってください。上から順番に進めれば設定が完了します。</p>
+
+      <div class="export-block">
+        <div class="export-head">
+          <h3>① Developer Portal で作成するフィールド一覧</h3>
+          <button class="copy-btn" data-copy="fieldsTable">コピー</button>
+        </div>
+        <p class="note">Developer Portal のウィジェット編集画面で、ここに書かれた名前・タイプと完全に一致するフィールドを先に作成してください（名前は大文字小文字も含めて一致させる必要があります）。</p>
+        <pre id="fieldsTable" class="code-block"></pre>
+      </div>
+
+      <div class="export-block">
+        <div class="export-head">
+          <h3>② PATCH 用 JSON ペイロード</h3>
+          <button class="copy-btn" data-copy="patchJson">コピー</button>
+        </div>
+        <pre id="patchJson" class="code-block"></pre>
+      </div>
+
+      <div class="export-block">
+        <div class="export-head">
+          <h3>③ アプリをプロフィールの候補に追加するコンソールスクリプト</h3>
+          <button class="copy-btn" data-copy="consoleScript">コピー</button>
+        </div>
+        <p class="note">Discord（ブラウザ版推奨）で Ctrl+Shift+I → Console タブに貼り付けて実行します。実行後 <code>allow pasting</code> の入力を求められる場合はそれも入力してください。あわせて実験フラグ <code>2026-03-application-widget-v2-renderer</code> を Variant 1 にしておくと表示が安定します。</p>
+        <pre id="consoleScript" class="code-block"></pre>
+      </div>
+
+      <div class="export-block">
+        <div class="export-head">
+          <h3>④ 初回データ送信コマンド（curl / PowerShell）</h3>
+          <button class="copy-btn" data-copy="curlCmd">curlをコピー</button>
+          <button class="copy-btn" data-copy="pwshCmd">PowerShellをコピー</button>
+        </div>
+        <p class="note">APPLICATION_ID / USER_ID / BOT_TOKEN をご自身の値に置き換えてください。BOT_TOKEN は絶対に人に共有・コミットしないでください。</p>
+        <pre id="curlCmd" class="code-block"></pre>
+        <pre id="pwshCmd" class="code-block"></pre>
+      </div>
+
+      <div class="export-block">
+        <div class="export-head">
+          <h3>⑤ botテンプレート用の設定ファイル</h3>
+          <button class="download-btn" id="downloadConfig">config.json をダウンロード</button>
+        </div>
+        <p class="note">このファイルを <code>bot-template/config.json</code> に置くと、同梱のbotがそのままこの構成で動きます。</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- LIVE PREVIEW -->
+  <aside class="preview-pane">
+    <h3>プレビュー（簡易イメージ）</h3>
+    <div class="mock-widget">
+      <div class="mock-top" id="mockTop">
+        <div class="mock-image" id="mockImage"></div>
+        <div class="mock-text">
+          <div class="mock-title" id="mockTitle">タイトル</div>
+          <div class="mock-subtitle" id="mockSubtitle">サブタイトル</div>
+        </div>
+      </div>
+      <div class="mock-mini" id="mockMini"></div>
+      <div class="mock-bottom" id="mockBottom"></div>
+    </div>
+    <div class="nav-buttons">
+      <button id="prevStep">← 戻る</button>
+      <button id="nextStep">次へ →</button>
+    </div>
+  </aside>
+
+</main>
+
+<footer class="foot">
+  <p>Widget Bench は非公式のコミュニティツールです。Discord, Inc. とは関係ありません。</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

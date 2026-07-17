@@ -1,0 +1,15 @@
+{
+  "name": "widget-bench-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Discord Profile Widgets V2 に config.json の内容をPATCHするローカルbot（Widget Benchが生成した設定を使用、固定値プロバイダー同梱）",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "node-fetch": "^2.7.0"
+  }
+}
